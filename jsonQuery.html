@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv='x-ua-compatible' content='ie=edge'>
+    <title>jsonQuery</title>
+    <link rel='stylesheet' href='' />
+    <style type='text/css'>
+
+        html {
+            height: 100%;
+        }
+
+        body {
+            height: calc(100% - 60px);
+        }
+
+        .form-style {
+            max-width: 100%;
+            height: calc(100% - 40px);
+            padding: 30px;
+            margin: 8px auto;
+            box-shadow: 1px 1px 25px rgba(0, 0, 0, 0.35);
+            border-radius: 10px;
+            border: 6px solid #305A72;
+            background: #FAFAFA;
+        }
+
+        .form-style > div:last-child {
+            height: calc(100% - 40px);
+        }
+
+        .form-style > div:last-child > div {
+            margin-top: 20px;
+            height: 100%;
+        }
+
+        .field-style {
+            box-sizing: border-box;
+            padding: 8px;
+            outline: none;
+            border: 1px solid #B0CFE0;
+        }
+
+        .field-style:focus {
+            box-shadow: 0 0 5px #B0CFE0;
+            border: 1px solid #B0CFE0;
+        }
+
+        .field-full {
+            width: 100%;
+        }
+
+        .field-split {
+            width: 48%;
+            display: inline-block;
+        }
+
+        .field-split-left {
+            float: left;
+        }
+
+        .field-split-right {
+            float: right;
+        }
+
+        input.align-left {
+            float: left;
+        }
+
+        input.align-right {
+            float: right;
+        }
+
+        .form-style ul li div {
+            width: 100%;
+            height: 100%;
+        }
+
+        input, label {
+            font: 12pt Arial, Helvetica, sans-serif;
+        }
+
+    </style>
+    <script type='text/javascript' src='jsonpath-0.8.0.js'></script>
+    <script src='https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js'></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.9/ace.js'></script>
+    <script type='text/javascript'>
+
+        var Source;
+        var Target;
+
+        onload=
+        function () 
+            {
+            try
+                {
+                $('.editor').each
+                    (
+                    function() 
+                        {
+                        var div=$(this);
+                        var editor=ace.edit(div[0]);
+                        editor.getSession().setMode('ace/mode/json');
+                        editor.renderer.setShowGutter(true);
+                        editor.setTheme('ace/theme/idle_fingers');
+                        editor.renderer.setOption('showLineNumbers',false);
+                        if (div[0].id=='Source') 
+                            {
+                            Source=editor; // The source textarea
+                            Source.on
+                                (
+                                'paste',
+                                function(event)
+                                    {
+                                    try
+                                        {
+                                        var formatted=event.text.search(/\n/g); // Is it already formatted i.e. has new lines?
+                                        if (formatted==-1)
+                                            {
+                                            var source=JSON.stringify(JSON.parse(event.text),undefined,2); // Format it...
+                                            setTimeout(function() {Source.getSession().setValue(source);},0); // ...and replace the current pasted value
+                                            }
+                                        }
+                                    catch (e)
+                                        {
+                                        window.alert('Exception: '+e.message);
+                                        }
+                                    setTimeout(reQuery,0); // Queue a requery
+                                    }
+                                );
+                            }
+                        else
+                            if (div[0].id=='Target') 
+                                {
+                                Target=editor; // The target textarea
+                                }
+                        }
+                    );
+                }
+            catch (e)
+                {
+                window.alert('Exception: '+e.message);
+                }
+            }
+
+        function reQuery() 
+            {
+            try
+                {
+                var mode='VALUE'; // document.getElementById('Paths').checked?'PATH':'VALUE'; // or 'PATH'
+                var query=document.getElementById('Query').value; // e.g. $.children[?(@.name=='Usecases')] or $.children[?(@.name=='Phases')].children[?(@.name=='SGA2')]..children[?(@.name.indexOf('WP1.1')!=-1)]
+                if (query.length)
+                    {
+                    var source=Source.getSession().getValue();
+                    if (source.length)
+                        {
+                        var json=JSON.parse(source.replace(/(\r\n|\n|\r)/gm,''));
+                        Target.getSession().setValue(JSON.stringify(jsonPath(json,query,mode),undefined,2)); // Formatted results
+                        }
+                    }
+                }
+            catch (e)
+                {
+                Target.getSession().setValue('Exception: '+e.message);
+                }
+            }
+
+    </script>
+</head>
+<body>
+    <div class='form-style'>
+        <div>
+            <input type='text' id='Query' name='Query' class='field-style field-full align-none' placeholder='Query' onkeyup='reQuery()' />
+        </div>
+        <!--
+        <div>
+            <input type='checkbox' id='Paths' name='Paths' class='field-style field-full' />
+            <label for='Paths'>Paths</label>
+        </div>
+        -->
+        <div>
+            <div id='Source' class='field-style field-split field-split-left editor'></div>
+            <div id='Target' class='field-style field-split field-split-right editor'></div>
+        </div>
+    </div>
+</body>
+</html>
